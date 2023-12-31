@@ -1,6 +1,10 @@
 import discord, boto3
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+#intents.members = True
+
+client = discord.Client(intents=intents)
 
 # Grabbing credentials from file creds.txt
 with open('creds.txt', 'r') as file:
@@ -19,8 +23,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------------')
-
-print("AWS instance is currently: " + instance.state['Name'].upper())
+    print("AWS instance is currently: " + instance.state['Name'].upper())
 
 @client.event
 async def on_message(message):

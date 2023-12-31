@@ -50,17 +50,19 @@ async def on_message(message):
                 await message.channel.send('AWS Instance rebooting')
             else:
                 await message.channel.send('Error rebooting AWS Instance')
+        else:
+            await message.channel.send('Unknow command? Try start, stop, status or reboot')
 
 def turn_off_instance():
     try:
-        instance.stop(False, False)
+        instance.stop(Hibernate=False,DryRun=False,Force=False)
         return True
     except:
         return False
 
 def turn_on_instance():
     try:
-        instance.start()
+        instance.start(DryRun=False)
         return True
     except:
         return False
@@ -91,7 +93,7 @@ def is_starting():
 
 def reboot_instance():
     try:
-        instance.reboot()
+        instance.reboot(DryRun=False)
         return True
     except:
         return False

@@ -1,5 +1,5 @@
 # AWS EC2 Controller Discord Bot
->Updated for 2023 by Mike Barley for new versions of Boto3 and Discord.
+>Updated for 2023 by Mike Barley for new versions of Boto3 and Discord. @jakebox and @leobeosab did the work
 
 Control an EC2 instance from discord - used for a mincreaft server.
 

@@ -1,102 +1,155 @@
-import discord, boto3
+import discord
+from discord.ext import commands
+import requests
+import asyncio
+import random
 
-intents = discord.Intents.default()
-intents.message_content = True
-#intents.members = True
+TOKEN = "MTIwMDQwNjIxMjA3NjkwMDQ2Mg.GTgLW7.Aub_C3osUcDFVe7sbjXn8Y9nduVqrvoVT6MWrE"
+API_ENDPOINTS = {
+    "running": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/running",
+    "stopped": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/stopped",
+    "start": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/start",
+    "stop": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/stop"
+}
 
-client = discord.Client(intents=intents)
+ALLOWED_ROLES = ["Host", "MODS"]
 
-# Grabbing credentials from file creds.txt
-with open('creds.txt', 'r') as file:
-    data = file.readlines()
-    file.close()
+# Starting Events Messages
+# Starting Events Messages with link
+starting_events_messages = [
+    "Initiating neural linkup. Commencing instance startup sequence. Stand by for connection confirmation. While you wait, visit https://ubreblancaproductions.com:443 for more cybernetic wonders.",
+    "Unlocking the cybernetic gates to the virtual realm. Stand ready for a journey into the neon-lit future. Dive into the digital fray at https://ubreblancaproductions.com:443 for an electrifying experience.",
+    "The cyberdeck hums with anticipation as we jack into the cyberverse. Watch as the digital world comes to life. Explore the endless possibilities at https://ubreblancaproductions.com:443.",
+    "Loading cyberware protocols... System online. Time to dive headfirst into the shadows of Night City. For more cyber-enhanced adventures, check out https://ubreblancaproductions.com:443.",
+    "Neural pathways engaged. Let the digital dance of cyberpunk commence in the sprawling cityscape. Venture deeper into the future at https://ubreblancaproductions.com:443.",
+    "The Net is calling. We're entering the realms where neon meets chrome. Get ready to hack the future. Discover more cyberpunk secrets at https://ubreblancaproductions.com:443.",
+    "Beneath the flickering neon lights, the virtual cityscape awakens. Welcome to the world of tomorrow. Don't forget to explore https://ubreblancaproductions.com:443 for exclusive cybernetic content.",
+    "Cyber-optics calibrated. The virtual horizon awaits. Time to plunge into the chaos of cyber-reality. Visit https://ubreblancaproductions.com:443 for a deeper dive into the cyberpunk universe.",
+    "The shadows of Night City envelop us as we venture into the world of cyber-enhanced intrigue. For more cyberpunk adventures, check out https://ubreblancaproductions.com:443.",
+    "System check complete. Prepare to join the ranks of cyberpunks in the endless labyrinth of the Net. Dive into the future at https://ubreblancaproductions.com:443."
+]
 
-instance_id = data[0].replace('instance_id = ', '').replace('\n', '')
-discord_bot_token = data[1].replace('discord_bot_token = ', '').replace('\n', '')
+# Stopping Events Messages
+stopping_events_messages = [
+    "Emergency disconnection initialized. Stand by for system shutdown confirmation.",
+    "The digital realm recedes as we sever the connection. Goodbye, cyber-reality, until we meet again.",
+    "Digital threads untangled. Logging out from the virtual maze. Until next time, cyber-explorer.",
+    "Deactivating neural interface. The cyberdeck falls silent as we return from the neon-tinged abyss.",
+    "Exiting the cybernetic dream. Disconnecting from the realm where man and machine merge.",
+    "The cyber-symphony fades as we pull the plug. Time to return to the mundane world, for now.",
+    "Cyber-reality dissipates like a phantom. Back to the analog world we go, leaving neon echoes behind.",
+    "The digital dance concludes, and the code dissolves. Farewell, cyberpunk dreams, until the next connection.",
+    "System shutdown confirmed. Exiting the cyber-fringe, where the future always pulses with electric dreams.",
+    "Disconnected from the digital abyss. Time to rest and recharge for the next cyberpunk adventure.",
+    "R.A.B.I.D.S. has been released. Brace for digital chaos, as the legacy of Rache Bartmoss awakens."
+]
 
-ec2 = boto3.resource('ec2')
-instance = ec2.Instance(instance_id)
+# Function to pick a random message
+def pick_random_message(messages):
+    return random.choice(messages)
 
-@client.event
+intents = discord.Intents.all()
+intents.messages = True  # Enable message events
+bot = commands.Bot(command_prefix='$', intents=intents)
+
+async def check_instance_start_success(ctx):
+    for _ in range(6):  # Retry up to 6 times over a minute
+        await asyncio.sleep(10)  # Wait for 10 seconds before each check
+        response = requests.get(API_ENDPOINTS["running"])
+        runningIds = response.json().get('instance_ids')
+        if "i-03c7b43c4454f0fa6" in runningIds:
+            random_starting_message = pick_random_message(starting_events_messages)
+            await ctx.send(random_starting_message)
+            return
+    # If instance hasn't started after all retries, send a failure message
+    await ctx.send("Instance startup sequence failed or is taking longer than expected.")
+
+async def check_instance_stop_success(ctx):
+    for _ in range(6):  # Retry up to 6 times over a minute
+        await asyncio.sleep(10)  # Wait for 10 seconds before each check
+        response = requests.get(API_ENDPOINTS["stopped"])
+        stoppedIds = response.json().get('instance_ids')
+        if "i-03c7b43c4454f0fa6" in stoppedIds:
+            random_stopping_message = pick_random_message(stopping_events_messages)
+            await ctx.send(random_stopping_message)
+            return
+    # If instance hasn't stopped after all retries, send a failure message
+    await ctx.send("Instance shutdown sequence failed or is taking longer than expected.")
+
+@bot.command()
+async def start(ctx):
+    if str(ctx.channel.id) != "1160014983489400974":
+        await ctx.send("Commands from this channel are not accepted.")
+        return
+    
+    # Check if the user has any of the allowed roles
+    user_roles = [role.name for role in ctx.author.roles]
+    if not any(role in user_roles for role in ALLOWED_ROLES):
+        await ctx.send("You do not have permission to use this command.")
+        return
+    
+    requests.post(API_ENDPOINTS["start"])
+    await ctx.send("Initiating neural linkup. Commencing instance startup sequence. Stand by for connection confirmation.")
+    bot.loop.create_task(check_instance_start_success(ctx))
+
+@bot.command()
+async def stop(ctx):
+    if str(ctx.channel.id) != "1160014983489400974":
+        await ctx.send("Commands from this channel are not accepted.")
+        return
+    
+    # Check if the user has any of the allowed roles
+    user_roles = [role.name for role in ctx.author.roles]
+    if not any(role in user_roles for role in ALLOWED_ROLES):
+        await ctx.send("You do not have permission to use this command.")
+        return
+    
+    requests.post(API_ENDPOINTS["stop"])
+    await ctx.send("Emergency disconnection initialized. Stand by for system shutdown confirmation.")
+    bot.loop.create_task(check_instance_stop_success(ctx))
+
+@bot.command()
+async def running(ctx):
+    if str(ctx.channel.id) != "1160014983489400974":
+        await ctx.send("Commands from this channel are not accepted.")
+        return
+    
+    # Check if the user has any of the allowed roles
+    user_roles = [role.name for role in ctx.author.roles]
+    if not any(role in user_roles for role in ALLOWED_ROLES):
+        await ctx.send("You do not have permission to use this command.")
+        return
+
+    response = requests.get(API_ENDPOINTS["running"])
+    runningIds = response.json().get('instance_ids')
+    if "i-03c7b43c4454f0fa6" in runningIds:
+        await ctx.send("System scan complete. Proceed to https://ubreblancaproductions.com:443 for further instructions.")
+    else:
+        await ctx.send("Initiate startup sequence when ready.")
+
+@bot.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('------------')
-    print("AWS instance is currently: " + instance.state['Name'].upper())
+    print(f'Connected to the cybernetic web as {bot.user}')
 
-@client.event
-async def on_message(message):
-    member_ids = (member.id for member in message.mentions)
-    if client.user.id in member_ids:
-        if 'stop' in message.content:
-            if not is_stopping() and is_on():
-                if turn_off_instance():
-                    await message.channel.send('AWS Instance stopping')
-                else:
-                    await message.channel.send('Error stopping AWS Instance, try again in a bit')
-            else:
-                await message.channel.send('AWS Instance is already stopping or is off')
-        elif 'start' in message.content:
-            if not is_on() and not is_stopping():
-                if turn_on_instance():
-                    await message.channel.send('AWS Instance starting')
-                else:
-                    await message.channel.send('Error starting AWS Instance, try again in a bit')
-        elif 'status' in message.content:
-            await message.channel.send('AWS Instance state is currently: ' + get_instance_state_string())
-        elif 'reboot' in message.content:
-            if reboot_instance():
-                await message.channel.send('AWS Instance rebooting')
-            else:
-                await message.channel.send('Error rebooting AWS Instance')
-        else:
-            await message.channel.send('Unknow command? Try start, stop, status or reboot')
-
-def turn_off_instance():
-    try:
-        instance.stop(Hibernate=False,DryRun=False,Force=False)
-        return True
-    except:
-        return False
-
-def turn_on_instance():
-    try:
-        instance.start(DryRun=False)
-        return True
-    except:
-        return False
-
-def get_instance_state_string():
-    return instance.state['Name']
-
-def is_stopping():
-    status = get_instance_state_string()
-    if status == "stopping":
-        return True
-    else:
-        return False
-
-def is_on():
-    status = get_instance_state_string()
-    if status == "running":
-        return True
-    else:
-        return False
-
-def is_starting():
-    status = get_instance_state_string()
-    if status == "pending":
-        return True
-    else:
-        return False
-
-def reboot_instance():
-    try:
-        instance.reboot(DryRun=False)
-        return True
-    except:
-        return False
+async def getRunning(ctx):
+    response = requests.get(API_ENDPOINTS["running"])
+    runningIds = response.json().get('instance_ids')
+    if "i-03c7b43c4454f0fa6" in runningIds:
+        random_starting_message = pick_random_message(starting_events_messages)
+        await ctx.send(random_starting_message)
+        return
+    else: 
+        check_instance_start_success(ctx)
 
 
-client.run(discord_bot_token)
+async def stopped(ctx):
+    response = requests.get(API_ENDPOINTS["stopped"])
+    stoppedIds = response.json().get('instance_ids')
+    if "i-03c7b43c4454f0fa6" in stoppedIds:
+        random_stopping_message = pick_random_message(stopping_events_messages)
+        await ctx.send(random_stopping_message)
+        return
+    else: 
+        check_instance_stop_success(ctx)
+
+bot.run(TOKEN)

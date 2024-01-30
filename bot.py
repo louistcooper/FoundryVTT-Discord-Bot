@@ -3,16 +3,20 @@ from discord.ext import commands
 import requests
 import asyncio
 import random
+from dotenv import load_dotenv
+import os
 
-TOKEN = "MTIwMDQwNjIxMjA3NjkwMDQ2Mg.GTgLW7.Aub_C3osUcDFVe7sbjXn8Y9nduVqrvoVT6MWrE"
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
 API_ENDPOINTS = {
-    "running": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/running",
-    "stopped": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/stopped",
-    "start": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/start",
-    "stop": "https://0011pnqkje.execute-api.ap-southeast-2.amazonaws.com/production/foundry-server/stop"
+    "running": os.getenv("RUNNING_ENDPOINT"),
+    "stopped": os.getenv("STOPPED_ENDPOINT"),
+    "start": os.getenv("START_ENDPOINT"),
+    "stop": os.getenv("STOP_ENDPOINT")
 }
-
-ALLOWED_ROLES = ["Host", "MODS"]
+INSTANCE_ID = os.getenv("INSTANCE_ID")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
+ALLOWED_ROLES = os.getenv("ALLOWED_ROLES").split(',')
 
 # Starting Events Messages
 # Starting Events Messages with link
@@ -57,7 +61,7 @@ async def check_instance_start_success(ctx):
         await asyncio.sleep(10)  # Wait for 10 seconds before each check
         response = requests.get(API_ENDPOINTS["running"])
         runningIds = response.json().get('instance_ids')
-        if "i-03c7b43c4454f0fa6" in runningIds:
+        if INSTANCE_ID in runningIds:
             random_starting_message = pick_random_message(starting_events_messages)
             await ctx.send(random_starting_message)
             return
@@ -69,7 +73,7 @@ async def check_instance_stop_success(ctx):
         await asyncio.sleep(10)  # Wait for 10 seconds before each check
         response = requests.get(API_ENDPOINTS["stopped"])
         stoppedIds = response.json().get('instance_ids')
-        if "i-03c7b43c4454f0fa6" in stoppedIds:
+        if INSTANCE_ID in stoppedIds:
             random_stopping_message = pick_random_message(stopping_events_messages)
             await ctx.send(random_stopping_message)
             return
@@ -78,7 +82,7 @@ async def check_instance_stop_success(ctx):
 
 @bot.command()
 async def start(ctx):
-    if str(ctx.channel.id) != "1160014983489400974":
+    if str(ctx.channel.id) != CHANNEL_ID:
         await ctx.send("Commands from this channel are not accepted.")
         return
     
@@ -94,7 +98,7 @@ async def start(ctx):
 
 @bot.command()
 async def stop(ctx):
-    if str(ctx.channel.id) != "1160014983489400974":
+    if str(ctx.channel.id) != CHANNEL_ID:
         await ctx.send("Commands from this channel are not accepted.")
         return
     
@@ -110,7 +114,7 @@ async def stop(ctx):
 
 @bot.command()
 async def running(ctx):
-    if str(ctx.channel.id) != "1160014983489400974":
+    if str(ctx.channel.id) != CHANNEL_ID:
         await ctx.send("Commands from this channel are not accepted.")
         return
     
@@ -122,7 +126,7 @@ async def running(ctx):
 
     response = requests.get(API_ENDPOINTS["running"])
     runningIds = response.json().get('instance_ids')
-    if "i-03c7b43c4454f0fa6" in runningIds:
+    if INSTANCE_ID in runningIds:
         await ctx.send("System scan complete. Proceed to https://ubreblancaproductions.com:443 for further instructions.")
     else:
         await ctx.send("Initiate startup sequence when ready.")
@@ -134,7 +138,7 @@ async def on_ready():
 async def getRunning(ctx):
     response = requests.get(API_ENDPOINTS["running"])
     runningIds = response.json().get('instance_ids')
-    if "i-03c7b43c4454f0fa6" in runningIds:
+    if INSTANCE_ID in runningIds:
         random_starting_message = pick_random_message(starting_events_messages)
         await ctx.send(random_starting_message)
         return
@@ -145,7 +149,7 @@ async def getRunning(ctx):
 async def stopped(ctx):
     response = requests.get(API_ENDPOINTS["stopped"])
     stoppedIds = response.json().get('instance_ids')
-    if "i-03c7b43c4454f0fa6" in stoppedIds:
+    if INSTANCE_ID in stoppedIds:
         random_stopping_message = pick_random_message(stopping_events_messages)
         await ctx.send(random_stopping_message)
         return

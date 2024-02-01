@@ -8,6 +8,8 @@ import os
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+DOMAIN_NAME = os.getenv("DOMAIN_NAME")  # Define DOMAIN_NAME from .env
+
 API_ENDPOINTS = {
     "running": os.getenv("RUNNING_ENDPOINT"),
     "stopped": os.getenv("STOPPED_ENDPOINT"),
@@ -21,16 +23,16 @@ ALLOWED_ROLES = os.getenv("ALLOWED_ROLES").split(',')
 # Starting Events Messages
 # Starting Events Messages with link
 starting_events_messages = [
-    "Initiating neural linkup. Commencing instance startup sequence. Stand by for connection confirmation. While you wait, visit https://ubreblancaproductions.com:443 for more cybernetic wonders.",
-    "Unlocking the cybernetic gates to the virtual realm. Stand ready for a journey into the neon-lit future. Dive into the digital fray at https://ubreblancaproductions.com:443 for an electrifying experience.",
-    "The cyberdeck hums with anticipation as we jack into the cyberverse. Watch as the digital world comes to life. Explore the endless possibilities at https://ubreblancaproductions.com:443.",
-    "Loading cyberware protocols... System online. Time to dive headfirst into the shadows of Night City. For more cyber-enhanced adventures, check out https://ubreblancaproductions.com:443.",
-    "Neural pathways engaged. Let the digital dance of cyberpunk commence in the sprawling cityscape. Venture deeper into the future at https://ubreblancaproductions.com:443.",
-    "The Net is calling. We're entering the realms where neon meets chrome. Get ready to hack the future. Discover more cyberpunk secrets at https://ubreblancaproductions.com:443.",
-    "Beneath the flickering neon lights, the virtual cityscape awakens. Welcome to the world of tomorrow. Don't forget to explore https://ubreblancaproductions.com:443 for exclusive cybernetic content.",
-    "Cyber-optics calibrated. The virtual horizon awaits. Time to plunge into the chaos of cyber-reality. Visit https://ubreblancaproductions.com:443 for a deeper dive into the cyberpunk universe.",
-    "The shadows of Night City envelop us as we venture into the world of cyber-enhanced intrigue. For more cyberpunk adventures, check out https://ubreblancaproductions.com:443.",
-    "System check complete. Prepare to join the ranks of cyberpunks in the endless labyrinth of the Net. Dive into the future at https://ubreblancaproductions.com:443."
+    f"Initiating neural linkup. Commencing instance startup sequence. Stand by for connection confirmation. While you wait, visit https://{DOMAIN_NAME} for more cybernetic wonders.",
+    f"Unlocking the cybernetic gates to the virtual realm. Stand ready for a journey into the neon-lit future. Dive into the digital fray at https://{DOMAIN_NAME} for an electrifying experience.",
+    f"The cyberdeck hums with anticipation as we jack into the cyberverse. Watch as the digital world comes to life. Explore the endless possibilities at https://{DOMAIN_NAME}.",
+    f"Loading cyberware protocols... System online. Time to dive headfirst into the shadows of Night City. For more cyber-enhanced adventures, check out https://{DOMAIN_NAME}.",
+    f"Neural pathways engaged. Let the digital dance of cyberpunk commence in the sprawling cityscape. Venture deeper into the future at https://{DOMAIN_NAME}.",
+    f"The Net is calling. We're entering the realms where neon meets chrome. Get ready to hack the future. Discover more cyberpunk secrets at https://{DOMAIN_NAME}.",
+    f"Beneath the flickering neon lights, the virtual cityscape awakens. Welcome to the world of tomorrow. Don't forget to explore https://{DOMAIN_NAME} for exclusive cybernetic content.",
+    f"Cyber-optics calibrated. The virtual horizon awaits. Time to plunge into the chaos of cyber-reality. Visit https://{DOMAIN_NAME} for a deeper dive into the cyberpunk universe.",
+    f"The shadows of Night City envelop us as we venture into the world of cyber-enhanced intrigue. For more cyberpunk adventures, check out https://{DOMAIN_NAME}.",
+    f"System check complete. Prepare to join the ranks of cyberpunks in the endless labyrinth of the Net. Dive into the future at https://{DOMAIN_NAME}."
 ]
 
 # Stopping Events Messages
@@ -127,7 +129,7 @@ async def running(ctx):
     response = requests.get(API_ENDPOINTS["running"])
     runningIds = response.json().get('instance_ids')
     if INSTANCE_ID in runningIds:
-        await ctx.send("System scan complete. Proceed to https://ubreblancaproductions.com:443 for further instructions.")
+        await ctx.send("System scan complete. Proceed to https://{DOMAIN_NAME} for further instructions.")
     else:
         await ctx.send("Initiate startup sequence when ready.")
 
@@ -142,9 +144,8 @@ async def getRunning(ctx):
         random_starting_message = pick_random_message(starting_events_messages)
         await ctx.send(random_starting_message)
         return
-    else: 
+    else:
         check_instance_start_success(ctx)
-
 
 async def stopped(ctx):
     response = requests.get(API_ENDPOINTS["stopped"])
